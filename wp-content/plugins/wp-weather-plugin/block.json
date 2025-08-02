@@ -1,0 +1,11 @@
+{
+  "apiVersion": 2,
+  "name": "wpweather/block",
+  "title": "Bloc Météo",
+  "category": "widgets",
+  "icon": "cloud",
+  "description": "Affiche la météo selon la localisation de l'utilisateur.",
+  "supports": { "html": false },
+  "editorScript": "file:./src/block.js",
+  "style": "file:./style.css"
+}

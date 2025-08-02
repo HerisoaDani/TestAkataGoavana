@@ -1,64 +1,75 @@
 <?php
+if (!defined('ABSPATH')) exit;
 
 add_action('rest_api_init', function () {
-    register_rest_route('wpweather/v1', '/get-weather', [
+    register_rest_route('wpweather/v1', '/get-weather', array(
         'methods' => 'GET',
-        'callback' => 'wp_weather_get_weather'
-    ]);
+        'callback' => 'wp_weather_get_weather',
+        'permission_callback' => '__return_true'
+    ));
 });
 
-function wp_weather_get_weather($request)
+function wp_weather_get_weather(WP_REST_Request $request)
 {
     global $wpdb;
+    $table_name = $wpdb->prefix . 'weather_cache';
 
-    $lat = sanitize_text_field($request->get_param('lat'));
-    $lon = sanitize_text_field($request->get_param('lon'));
+    $lat = floatval($request->get_param('lat'));
+    $lon = floatval($request->get_param('lon'));
     $today = date('Y-m-d');
 
-    // Vérifie le cache
-    $table = $wpdb->prefix . 'weather_cache';
-    $cache = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table WHERE lat=%s AND lon=%s AND date=%s",
+    if (!$lat || !$lon) {
+        return array("error" => "Coordonnées invalides.");
+    }
+
+    // Vérifier si la météo est déjà en base pour aujourd'hui
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table_name WHERE latitude = %f AND longitude = %f AND date = %s",
         $lat,
         $lon,
         $today
     ));
 
-    if ($cache) {
-        return [
-            'city' => $cache->city,
-            'temp' => $cache->temp,
-            'condition' => $cache->condition
-        ];
+    if ($row) {
+        return array(
+            "city" => $row->city,
+            "temp" => $row->temp,
+            "condition" => $row->condition_text
+        );
     }
 
-    // Appel WeatherAPI
-    $apiKey = 'eedb425208b54663b2184256250208';
+    // Pas trouvé en base → Appel à WeatherAPI
+    $apiKey = 'eedb425208b54663b2184256250208'; // <<<<< Mets ta clé ici
     $url = "https://api.weatherapi.com/v1/current.json?key={$apiKey}&q={$lat},{$lon}&lang=fr";
 
     $response = wp_remote_get($url);
     if (is_wp_error($response)) {
-        return ['error' => 'Erreur API météo.'];
+        return array("error" => "Erreur de connexion à WeatherAPI.");
     }
 
     $data = json_decode(wp_remote_retrieve_body($response), true);
-    if (!isset($data['location'])) {
-        return ['error' => 'Pas de données météo disponibles.'];
+    if (!isset($data['location']['name'])) {
+        return array("error" => "Données météo introuvables.");
     }
 
-    // Sauvegarde en BDD
-    $wpdb->insert($table, [
-        'city' => $data['location']['name'],
-        'lat' => $lat,
-        'lon' => $lon,
-        'date' => $today,
-        'temp' => $data['current']['temp_c'],
-        'condition' => $data['current']['condition']['text']
-    ]);
+    $city = sanitize_text_field($data['location']['name']);
+    $temp = floatval($data['current']['temp_c']);
+    $condition_text = sanitize_text_field($data['current']['condition']['text']);
 
-    return [
-        'city' => $data['location']['name'],
-        'temp' => $data['current']['temp_c'],
-        'condition' => $data['current']['condition']['text']
-    ];
+    // Enregistrer en base
+    $wpdb->insert($table_name, array(
+        'latitude' => $lat,
+        'longitude' => $lon,
+        'city' => $city,
+        'temp' => $temp,
+        'condition_text' => $condition_text,
+        'date' => $today
+    ));
+
+    // Retourner la météo
+    return array(
+        "city" => $city,
+        "temp" => $temp,
+        "condition" => $condition_text
+    );
 }
