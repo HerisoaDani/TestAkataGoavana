@@ -41,7 +41,7 @@ add_action('init', 'wp_weather_register_block');
  * Enregistrer scripts & styles du bloc
  */
 function wp_weather_register_assets()
-function wp_weather_register_assets() {
+{
     // Script du bloc Gutenberg
     wp_register_script(
         'wpweather-block',
