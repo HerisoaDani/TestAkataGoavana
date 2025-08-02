@@ -13,16 +13,27 @@ function wp_weather_get_weather(WP_REST_Request $request)
 {
     global $wpdb;
     $table_name = $wpdb->prefix . 'weather_cache';
-
-    $lat = floatval($request->get_param('lat'));
-    $lon = floatval($request->get_param('lon'));
     $today = date('Y-m-d');
 
-    if (!$lat || !$lon) {
+    $lat = $request->get_param('lat');
+    $lon = $request->get_param('lon');
+    $cityParam = sanitize_text_field($request->get_param('city'));
+
+    // Vérifier si c'est une recherche par ville
+    if (!empty($cityParam)) {
+        // On ignore la BDD pour la ville → recherche API directe
+        return wp_weather_fetch_from_api_city($cityParam);
+    }
+
+    // Vérifier si coordonnées valides
+    if (!is_numeric($lat) || !is_numeric($lon)) {
         return array("error" => "Coordonnées invalides.");
     }
 
-    // Vérifier cache
+    $lat = floatval($lat);
+    $lon = floatval($lon);
+
+    // Vérifier si on a déjà les données en BDD
     $row = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM $table_name WHERE latitude = %f AND longitude = %f AND date = %s",
         $lat,
@@ -38,8 +49,17 @@ function wp_weather_get_weather(WP_REST_Request $request)
         );
     }
 
-    // Appel WeatherAPI
-    $apiKey = '5e9cdb4300f949d28ab145108250208';
+    // Sinon → appel API
+    return wp_weather_fetch_from_api_coords($lat, $lon);
+}
+
+function wp_weather_fetch_from_api_coords($lat, $lon)
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'weather_cache';
+    $today = date('Y-m-d');
+
+    $apiKey = 'TA_CLE_API_ICI';
     $url = "https://api.weatherapi.com/v1/current.json?key={$apiKey}&q={$lat},{$lon}&lang=fr";
 
     $response = wp_remote_get($url);
@@ -56,7 +76,7 @@ function wp_weather_get_weather(WP_REST_Request $request)
     $temp = floatval($data['current']['temp_c']);
     $condition_text = sanitize_text_field($data['current']['condition']['text']);
 
-    // Sauvegarder en base
+    // Sauvegarder en BDD
     $wpdb->insert($table_name, array(
         'latitude' => $lat,
         'longitude' => $lon,
@@ -70,5 +90,27 @@ function wp_weather_get_weather(WP_REST_Request $request)
         "city" => $city,
         "temp" => $temp,
         "condition" => $condition_text
+    );
+}
+
+function wp_weather_fetch_from_api_city($cityParam)
+{
+    $apiKey = '5e9cdb4300f949d28ab145108250208';
+    $url = "https://api.weatherapi.com/v1/current.json?key={$apiKey}&q=" . urlencode($cityParam) . "&lang=fr";
+
+    $response = wp_remote_get($url);
+    if (is_wp_error($response)) {
+        return array("error" => "Erreur de connexion à WeatherAPI.");
+    }
+
+    $data = json_decode(wp_remote_retrieve_body($response), true);
+    if (!isset($data['location']['name'])) {
+        return array("error" => "Données météo introuvables.");
+    }
+
+    return array(
+        "city" => sanitize_text_field($data['location']['name']),
+        "temp" => floatval($data['current']['temp_c']),
+        "condition" => sanitize_text_field($data['current']['condition']['text'])
     );
 }
