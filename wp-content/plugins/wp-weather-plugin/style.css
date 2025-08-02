@@ -1,0 +1,54 @@
+/* Style principal du bloc météo */
+#weather-block {
+    padding: 15px;
+    border-radius: 10px;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: white;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    max-width: 300px;
+    margin: 0 auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Température */
+#weather-block .temp {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+/* Nom de la ville */
+#weather-block .city {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* Condition météo */
+#weather-block .condition {
+    font-size: 1em;
+    margin-top: 5px;
+}
+
+/* Bouton changer de ville */
+#weather-block button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    border: none;
+    background: rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#weather-block button:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+/* Icône météo */
+#weather-block img {
+    width: 64px;
+    height: 64px;
+    margin-top: 5px;
+}

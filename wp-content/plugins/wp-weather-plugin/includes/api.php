@@ -22,7 +22,7 @@ function wp_weather_get_weather(WP_REST_Request $request)
         return array("error" => "Coordonnées invalides.");
     }
 
-    // Vérifier si la météo est déjà en base pour aujourd'hui
+    // Vérifier cache
     $row = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM $table_name WHERE latitude = %f AND longitude = %f AND date = %s",
         $lat,
@@ -38,8 +38,8 @@ function wp_weather_get_weather(WP_REST_Request $request)
         );
     }
 
-    // Pas trouvé en base → Appel à WeatherAPI
-    $apiKey = 'eedb425208b54663b2184256250208'; // <<<<< Mets ta clé ici
+    // Appel WeatherAPI
+    $apiKey = '5e9cdb4300f949d28ab145108250208';
     $url = "https://api.weatherapi.com/v1/current.json?key={$apiKey}&q={$lat},{$lon}&lang=fr";
 
     $response = wp_remote_get($url);
@@ -56,7 +56,7 @@ function wp_weather_get_weather(WP_REST_Request $request)
     $temp = floatval($data['current']['temp_c']);
     $condition_text = sanitize_text_field($data['current']['condition']['text']);
 
-    // Enregistrer en base
+    // Sauvegarder en base
     $wpdb->insert($table_name, array(
         'latitude' => $lat,
         'longitude' => $lon,
@@ -66,7 +66,6 @@ function wp_weather_get_weather(WP_REST_Request $request)
         'date' => $today
     ));
 
-    // Retourner la météo
     return array(
         "city" => $city,
         "temp" => $temp,

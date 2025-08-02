@@ -6,6 +6,6 @@
   "icon": "cloud",
   "description": "Affiche la météo selon la localisation de l'utilisateur.",
   "supports": { "html": false },
-  "editorScript": "file:./src/block.js",
+  "editorScript": "wpweather-block",
   "style": "file:./style.css"
 }
