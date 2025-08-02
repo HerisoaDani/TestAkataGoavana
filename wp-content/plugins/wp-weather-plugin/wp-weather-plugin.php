@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Prévision Météo Locale
  * Description: Affiche la météo selon la localisation de l'utilisateur avec Gutenberg (cache BDD).
- * Version: 1.1
+ * Version: 2
  * Author: Daniella Rakotozandry
  */
 
@@ -27,8 +27,10 @@ function wp_weather_render_block()
 function wp_weather_register_block()
 {
     register_block_type(
-        __DIR__, // lit block.json
+        __DIR__,
         array(
+            'editor_script' => 'wpweather-block',
+            'style' => 'wpweather-style',
             'render_callback' => 'wp_weather_render_block'
         )
     );
@@ -39,8 +41,8 @@ add_action('init', 'wp_weather_register_block');
  * Enregistrer scripts & styles du bloc
  */
 function wp_weather_register_assets()
-{
-    // JS
+function wp_weather_register_assets() {
+    // Script du bloc Gutenberg
     wp_register_script(
         'wpweather-block',
         plugins_url('src/block.js', __FILE__),
@@ -49,7 +51,6 @@ function wp_weather_register_assets()
         true
     );
 
-    // Passer l’URL REST API à JS
     wp_localize_script('wpweather-block', 'wpweatherData', array(
         'apiUrl' => esc_url_raw(rest_url('wpweather/v1/get-weather'))
     ));
