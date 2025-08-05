@@ -29,4 +29,3 @@ function wpweather_create_table()
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 }
-register_activation_hook(__FILE__, 'wpweather_create_table');
