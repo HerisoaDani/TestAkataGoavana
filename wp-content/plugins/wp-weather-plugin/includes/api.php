@@ -26,12 +26,12 @@ function wp_weather_get_weather(WP_REST_Request $request)
     $cityParam = sanitize_text_field($request->get_param('city'));
     $dateParam = sanitize_text_field($request->get_param('date')) ?: date('Y-m-d');
 
-    //  Vérif format de la date (YYYY-MM-DD)
+    // Vérif format date
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateParam)) {
         return array("error" => "Date invalide.");
     }
 
-    //Recherche en cache BDD
+    // Recherche en cache
     $row = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM $table_name 
          WHERE ((latitude = %f AND longitude = %f) OR city = %s) 
@@ -43,10 +43,10 @@ function wp_weather_get_weather(WP_REST_Request $request)
     ));
 
     if ($row) {
-        return (array) $row; // Retourne données en cache
+        return (array) $row; // Retourne cache
     }
 
-    // **récupération via API
+    // Sinon appel API
     if ($cityParam) {
         return wpweather_fetch_and_store($cityParam, null, null, $dateParam);
     } elseif (is_numeric($lat) && is_numeric($lon)) {
@@ -57,7 +57,7 @@ function wp_weather_get_weather(WP_REST_Request $request)
 }
 
 /**
- * Récupère les données météo depuis WeatherAPI et les stocke en BDD
+ * Récupère depuis WeatherAPI et stocke en BDD
  */
 function wpweather_fetch_and_store($city = null, $lat = null, $lon = null, $date)
 {
@@ -65,11 +65,13 @@ function wpweather_fetch_and_store($city = null, $lat = null, $lon = null, $date
     $table_name = $wpdb->prefix . 'weather_cache';
     $apiKey     = '517eaec408794961bff70427250308';
 
-    // Construction de la requête API
-    $location = $city ?: "$lat,$lon";
-    $url = "https://api.weatherapi.com/v1/forecast.json?key={$apiKey}&q={$location}&lang=fr&dt={$date}";
+    // Utiliser lat/lon si dispo
+    $location = ($lat && $lon) ? "{$lat},{$lon}" : $city;
 
-    // Appel API
+    // Utiliser history si date passée
+    $endpoint = ($date < date('Y-m-d')) ? 'history' : 'forecast';
+    $url = "https://api.weatherapi.com/v1/{$endpoint}.json?key={$apiKey}&q={$location}&lang=fr&dt={$date}";
+
     $response = wp_remote_get($url);
     if (is_wp_error($response)) {
         return array("error" => "Erreur connexion API.");
@@ -77,35 +79,36 @@ function wpweather_fetch_and_store($city = null, $lat = null, $lon = null, $date
 
     $data = json_decode(wp_remote_retrieve_body($response), true);
 
-    // Si aucune localisation trouvée
     if (empty($data['location']['name']) || empty($data['forecast']['forecastday'][0]['day'])) {
         return array("error" => "Pas de données météo trouvées.");
     }
 
-    // Extraction des données
     $forecastDay = $data['forecast']['forecastday'][0]['day'];
 
     $insertData = array(
-        'latitude'       => isset($lat) ? floatval($lat) : 0,
-        'longitude'      => isset($lon) ? floatval($lon) : 0,
+        'latitude'       => floatval($data['location']['lat']),
+        'longitude'      => floatval($data['location']['lon']),
         'city'           => sanitize_text_field($data['location']['name']),
         'temp'           => floatval($forecastDay['avgtemp_c']),
-        'feelslike'      => floatval($forecastDay['avgtemp_c']), // Pas de feelslike daily dans API
+        'feelslike'      => floatval($forecastDay['avgtemp_c']),
         'humidity'       => intval($forecastDay['avghumidity']),
         'wind_kph'       => floatval($forecastDay['maxwind_kph']),
         'visibility_km'  => floatval($forecastDay['avgvis_km']),
-        'pressure_mb'    => 0, // Optionnel, non fourni par forecast daily
+        'pressure_mb'    => 0,
         'condition_text' => sanitize_text_field($forecastDay['condition']['text']),
         'icon'           => esc_url_raw("https:" . $forecastDay['condition']['icon']),
         'date'           => $date
     );
 
-    // Insertion en BDD avec vérification
-    $inserted = $wpdb->insert($table_name, $insertData);
-    if ($inserted === false) {
-        error_log("WPWeather - Erreur INSERT : " . $wpdb->last_error);
-    } else {
-        error_log("WPWeather - Données insérées pour {$insertData['city']} le {$date}");
+    // Éviter les doublons
+    $exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM $table_name WHERE city = %s AND date = %s",
+        $insertData['city'],
+        $insertData['date']
+    ));
+
+    if (!$exists) {
+        $wpdb->insert($table_name, $insertData);
     }
 
     return $insertData;
