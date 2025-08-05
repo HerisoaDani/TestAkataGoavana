@@ -5,7 +5,9 @@
   "category": "widgets",
   "icon": "cloud",
   "description": "Affiche la météo selon la localisation de l'utilisateur.",
-  "supports": { "html": false },
+  "supports": {
+    "html": false
+  },
   "editorScript": "wpweather-block",
-  "style": "file:./style.css"
+  "style": "wpweather-style"
 }

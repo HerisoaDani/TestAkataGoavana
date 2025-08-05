@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Prévision Météo Locale
  * Description: Affiche la météo selon la localisation de l'utilisateur avec Gutenberg (cache BDD).
- * Version: 2
+ * Version: 2.1.1
  * Author: Daniella Rakotozandry
  */
 
@@ -22,15 +22,13 @@ function wp_weather_render_block()
 }
 
 /**
- * Enregistrer le bloc Gutenberg
+ * Enregistrement du bloc Gutenberg
  */
 function wp_weather_register_block()
 {
     register_block_type(
-        __DIR__,
+        __DIR__, // Utilise block.json
         array(
-            'editor_script' => 'wpweather-block',
-            'style' => 'wpweather-style',
             'render_callback' => 'wp_weather_render_block'
         )
     );
@@ -38,24 +36,26 @@ function wp_weather_register_block()
 add_action('init', 'wp_weather_register_block');
 
 /**
- * Enregistrer scripts & styles du bloc
+ * Enregistrement des scripts & styles
  */
 function wp_weather_register_assets()
 {
-    // Script du bloc Gutenberg
+
+    // Script bloc Gutenberg + logique front météo
     wp_register_script(
         'wpweather-block',
         plugins_url('src/block.js', __FILE__),
-        array('wp-blocks', 'wp-element', 'wp-editor'),
+        array('wp-blocks', 'wp-element'),
         filemtime(plugin_dir_path(__FILE__) . 'src/block.js'),
         true
     );
 
+    // Localisation des données pour JS
     wp_localize_script('wpweather-block', 'wpweatherData', array(
         'apiUrl' => esc_url_raw(rest_url('wpweather/v1/get-weather'))
     ));
 
-    // CSS
+    // Styles CSS
     wp_register_style(
         'wpweather-style',
         plugins_url('style.css', __FILE__),
@@ -66,12 +66,21 @@ function wp_weather_register_assets()
 add_action('init', 'wp_weather_register_assets');
 
 /**
- * Charger scripts & styles en front et éditeur
+ * Chargement dans l’éditeur Gutenberg
  */
-function wp_weather_enqueue_assets()
+function wp_weather_enqueue_editor_assets()
 {
     wp_enqueue_script('wpweather-block');
     wp_enqueue_style('wpweather-style');
 }
-add_action('enqueue_block_editor_assets', 'wp_weather_enqueue_assets');
-add_action('wp_enqueue_scripts', 'wp_weather_enqueue_assets');
+add_action('enqueue_block_editor_assets', 'wp_weather_enqueue_editor_assets');
+
+/**
+ * Chargement en front
+ */
+function wp_weather_enqueue_front_assets()
+{
+    wp_enqueue_script('wpweather-block');
+    wp_enqueue_style('wpweather-style');
+}
+add_action('wp_enqueue_scripts', 'wp_weather_enqueue_front_assets');
