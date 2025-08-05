@@ -21,9 +21,7 @@ function wp_weather_render_block()
     return '<div id="weather-block">Chargement météo...</div>';
 }
 
-/**
- * Enregistrement du bloc Gutenberg
- */
+/** * Enregistrement du bloc Gutenberg */
 function wp_weather_register_block()
 {
     register_block_type(
@@ -35,9 +33,7 @@ function wp_weather_register_block()
 }
 add_action('init', 'wp_weather_register_block');
 
-/**
- * Enregistrement des scripts & styles
- */
+/** * Enregistrement des scripts & styles */
 function wp_weather_register_assets()
 {
 
@@ -65,9 +61,7 @@ function wp_weather_register_assets()
 }
 add_action('init', 'wp_weather_register_assets');
 
-/**
- * Chargement dans l’éditeur Gutenberg
- */
+/** Chargement dans l’éditeur Gutenberg */
 function wp_weather_enqueue_editor_assets()
 {
     wp_enqueue_script('wpweather-block');
@@ -75,9 +69,7 @@ function wp_weather_enqueue_editor_assets()
 }
 add_action('enqueue_block_editor_assets', 'wp_weather_enqueue_editor_assets');
 
-/**
- * Chargement en front
- */
+/** * Chargement en front */
 function wp_weather_enqueue_front_assets()
 {
     wp_enqueue_script('wpweather-block');

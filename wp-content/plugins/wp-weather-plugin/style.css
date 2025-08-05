@@ -1,54 +1,117 @@
-/* Style principal du bloc météo */
-#weather-block {
-    padding: 15px;
-    border-radius: 10px;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    color: white;
+/* Disposition horizontale */
+.wpweather-card-landscape {
+    display: flex;
     background: linear-gradient(135deg, #4facfe, #00f2fe);
-    max-width: 300px;
-    margin: 0 auto;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    color: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-/* Température */
-#weather-block .temp {
-    font-size: 2em;
-    font-weight: bold;
-    margin: 8px 0;
+.left-side {
+    flex: 1;
+    text-align: center;
 }
 
-/* Nom de la ville */
-#weather-block .city {
-    font-size: 1.2em;
-    font-weight: bold;
+.right-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* centre horizontalement */
 }
 
-/* Condition météo */
-#weather-block .condition {
-    font-size: 1em;
-    margin-top: 5px;
+.details {
+    margin-bottom: 15px;
+    text-align: left;
 }
 
-/* Bouton changer de ville */
-#weather-block button {
-    margin-top: 10px;
+.controls {
+    text-align: center;
+}
+
+.controls button {
+    margin: 5px;
     padding: 6px 12px;
     border: none;
-    background: rgba(255,255,255,0.3);
-    color: white;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.2s;
+    font-weight: bold;
+    background: rgba(255,255,255,0.3);
+    color: white;
 }
 
-#weather-block button:hover {
+.controls button:hover {
     background: rgba(255,255,255,0.5);
 }
 
-/* Icône météo */
-#weather-block img {
-    width: 64px;
-    height: 64px;
-    margin-top: 5px;
+/* Popup */
+.city-popup {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.city-popup-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 320px;
+    width: 90%;
+    animation: popupFade 0.3s ease-in-out;
+}
+
+.city-popup-content h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.city-popup-content input {
+    padding: 10px;
+    width: 90%;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: space-around;
+}
+
+.popup-buttons button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#saveCity {
+    background: #4cafef;
+    color: white;
+}
+
+#cancelCity {
+    background: #f44336;
+    color: white;
+}
+
+.popup-buttons button:hover {
+    opacity: 0.85;
+}
+
+
+
+@keyframes popupFade {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
